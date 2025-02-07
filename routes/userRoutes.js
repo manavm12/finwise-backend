@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -82,6 +83,87 @@ router.get("/", async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("Get Users Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+router.post("/add-repeated-expense", authMiddleware, async (req, res) => {
+  const { description, category, amount } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.repeatedExpenses.push({ description, category, amount, isActive: false });
+    await user.save();
+
+    res.status(201).json({ message: "Repeated Expense added successfully", repeatedExpenses: user.repeatedExpenses });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 📌 Get User's Repeated Expenses
+router.get("/repeated-expenses", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("repeatedExpenses");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user.repeatedExpenses);
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 📌 Toggle Activation of Repeated Expense
+router.put("/toggle-repeated-expense/:index", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const index = req.params.index;
+    if (index >= user.repeatedExpenses.length) {
+      return res.status(400).json({ message: "Invalid index" });
+    }
+
+    user.repeatedExpenses[index].isActive = !user.repeatedExpenses[index].isActive;
+    await user.save();
+
+    res.json({ message: "Repeated Expense updated", repeatedExpenses: user.repeatedExpenses });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+router.get("/budget", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("monthlyBudget");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ monthlyBudget: user.monthlyBudget });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 📌 Update Monthly Budget
+router.put("/update-budget", authMiddleware, async (req, res) => {
+  const { monthlyBudget } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.monthlyBudget = monthlyBudget;
+    await user.save();
+
+    res.json({ message: "Monthly budget updated", monthlyBudget: user.monthlyBudget });
+
+  } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });

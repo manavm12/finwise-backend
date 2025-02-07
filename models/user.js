@@ -6,6 +6,14 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true }, // Hashed Password
   monthlyBudget: { type: Number, default: 0 },
   budgetUsed: { type: Number, default: 0 },
+  repeatedExpenses: [
+    {
+      description: { type: String, required: true },
+      category: { type: String, required: true },
+      amount: { type: Number, required: true },
+      isActive: { type: Boolean, default: false },
+    }
+  ],
   createdAt: { type: Date, default: Date.now },
 });
 
