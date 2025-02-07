@@ -92,4 +92,30 @@ router.delete("/delete/:id", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/by-date/:date", authMiddleware, async (req, res) => {
+  try {
+    const selectedDate = new Date(req.params.date);
+    
+    // Normalize selectedDate to remove time (00:00:00)
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const nextDay = new Date(selectedDate);
+    nextDay.setDate(selectedDate.getDate() + 1); // Get the next day's 00:00:00
+
+    // Filter expenses that fall within this day
+    const expenses = await Expense.find({
+      userId: req.user.id,
+      date: { 
+        $gte: selectedDate,  // Start of the selected day
+        $lt: nextDay         // Start of the next day (excludes it)
+      }
+    }).sort({ date: -1 });
+
+    res.json(expenses);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
 module.exports = router;
