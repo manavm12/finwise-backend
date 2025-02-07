@@ -1,6 +1,7 @@
 const express = require("express");
 const Expense = require("../models/expense");
 const authMiddleware = require("../middleware/authMiddleware"); // Import authentication middleware
+const mongoose = require("mongoose");
 
 const router = express.Router();
 
@@ -10,11 +11,11 @@ router.post("/add", authMiddleware, async (req, res) => {
 
   try {
     const expense = new Expense({
-      userId: req.user.id, // Get user ID from token
+      userId: req.user.id,
       description,
       category,
       amount,
-      date: date || new Date(), // Default to current date if not provided
+      date: date ? new Date(date) : new Date() // ✅ Ensure it's stored as a Date object
     });
 
     await expense.save();
@@ -30,6 +31,33 @@ router.get("/", authMiddleware, async (req, res) => {
   try {
     const expenses = await Expense.find({ userId: req.user.id }).sort({ date: -1 }); // Latest first
     res.json(expenses);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+router.get("/monthly-spending", authMiddleware, async (req, res) => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+    const endOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+
+    const userObjectId = new mongoose.Types.ObjectId(req.user.id);
+
+    const totalSpending = await Expense.aggregate([
+      { 
+        $match: { 
+          userId: userObjectId,
+          date: { $gte: firstDayOfMonth, $lte: endOfToday } 
+        } 
+      },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    const total = totalSpending.length > 0 ? totalSpending[0].total : 0;
+    res.json({ totalSpendingThisMonth: total });
+
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -116,6 +144,7 @@ router.get("/by-date/:date", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 
 module.exports = router;
