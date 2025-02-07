@@ -168,4 +168,24 @@ router.put("/update-budget", authMiddleware, async (req, res) => {
   }
 });
 
+router.delete("/delete-repeated-expense/:index", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const index = req.params.index;
+    if (index >= user.repeatedExpenses.length) {
+      return res.status(400).json({ message: "Invalid index" });
+    }
+
+    user.repeatedExpenses.splice(index, 1); // Remove the repeated expense
+    await user.save();
+
+    res.json({ message: "Repeated expense deleted successfully", repeatedExpenses: user.repeatedExpenses });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 module.exports = router;
