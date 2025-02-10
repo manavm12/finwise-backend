@@ -84,21 +84,6 @@ async function analyzeUserSpending(userId, userQuery) {
         - Discuss how these expenses impact their overall spending and budgeting.
       5. **Trends**: 
         - Highlight spending patterns, trends, or anomalies that may be important for the user to consider.
-
-      ### Response Format:
-      Use the following format for clarity and structure:
-
-      - **Summary of Spending**:  
-        Provide a concise overview of their spending and financial status.
-
-      - **Key Insights**:  
-        Highlight overspending, underspending, trends, or anomalies.
-
-      - **Actionable Suggestions**:  
-        Offer clear, specific advice based on their financial situation.
-
-      - **Next Steps**:  
-        Suggest steps they can take to improve their financial habits or achieve their goals.
     `;
 
     //Send the request to OpenAI
