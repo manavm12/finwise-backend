@@ -45,18 +45,30 @@ router.get("/monthly-spending", authMiddleware, async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(req.user.id);
 
-    const totalSpending = await Expense.aggregate([
+    const spendingDetails = await Expense.aggregate([
       { 
         $match: { 
           userId: userObjectId,
           date: { $gte: firstDayOfMonth, $lte: endOfToday } 
         } 
       },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
+      { 
+        $group: { 
+          _id: null, 
+          totalSpending: { $sum: "$amount" }, 
+          lowestSpending: { $min: "$amount" }, 
+          highestSpending: { $max: "$amount" } 
+        } 
+      }
     ]);
 
-    const total = totalSpending.length > 0 ? totalSpending[0].total : 0;
-    res.json({ totalSpendingThisMonth: total });
+    const result = spendingDetails.length > 0 ? spendingDetails[0] : { totalSpending: 0, lowestSpending: 0, highestSpending: 0 };
+
+    res.json({
+      totalSpendingThisMonth: result.totalSpending,
+      lowestSpending: result.lowestSpending,
+      highestSpending: result.highestSpending
+    });
 
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
