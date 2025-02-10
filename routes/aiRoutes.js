@@ -4,7 +4,7 @@ const { analyzeUserSpending } = require("../services/aiService");
 
 const router = express.Router();
 
-// 📌 AI Expense Analysis Endpoint
+// AI Expense Analysis Endpoint
 router.post("/analyze-spending", authMiddleware, async (req, res) => {
   const { query } = req.body;
   
